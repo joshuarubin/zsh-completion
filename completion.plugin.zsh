@@ -17,6 +17,7 @@ fpath+=${0:h}/completion
 
 # Load and initialize the completion system ignoring insecure directories.
 autoload -Uz compinit && compinit -i
+autoload -Uz bashcompinit && bashcompinit
 
 #
 # Options
