@@ -1,7 +1,6 @@
 #!/bin/bash
 
-if ! type __git_reassemble_comp_words_by_ref >/dev/null 2>&1; then
-__git_reassemble_comp_words_by_ref()
+__zsh_bash_reassemble_comp_words_by_ref()
 {
 	local exclude i j first
 	# Which word separators to exclude?
@@ -46,7 +45,6 @@ __git_reassemble_comp_words_by_ref()
 		fi
 	done
 }
-fi
 
 if ! type _get_comp_words_by_ref >/dev/null 2>&1; then
 _get_comp_words_by_ref ()
@@ -56,7 +54,7 @@ _get_comp_words_by_ref ()
 		exclude=$2
 		shift 2
 	fi
-	__git_reassemble_comp_words_by_ref "$exclude"
+	__zsh_bash_reassemble_comp_words_by_ref "$exclude"
 	cur_=${words_[cword_]}
 	while [ $# -gt 0 ]; do
 		case "$1" in
