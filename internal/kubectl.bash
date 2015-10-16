@@ -1262,16 +1262,19 @@ __start_kubectl()
         __my_init_completion || return
     fi
 
+    local flags two_word_flags flags_with_completion flags_completion commands
+    local must_have_one_flag must_have_one_noun nouns
+
     local c=0
-    local flags=()
-    local two_word_flags=()
-    local flags_with_completion=()
-    local flags_completion=()
-    local commands=("kubectl")
-    local must_have_one_flag=()
-    local must_have_one_noun=()
+    flags=()
+    two_word_flags=()
+    flags_with_completion=()
+    flags_completion=()
+    commands=("kubectl")
+    must_have_one_flag=()
+    must_have_one_noun=()
     local last_command
-    local nouns=()
+    nouns=()
 
     __handle_word
 }

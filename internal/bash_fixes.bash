@@ -1,5 +1,10 @@
 #!/bin/bash
 
+case "$COMP_WORDBREAKS" in
+*:*) : great ;;
+*)   COMP_WORDBREAKS="$COMP_WORDBREAKS:"
+esac
+
 __zsh_bash_reassemble_comp_words_by_ref()
 {
 	local exclude i j first
