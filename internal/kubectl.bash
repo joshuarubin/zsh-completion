@@ -38,10 +38,10 @@ __contains_word()
 
 __handle_reply()
 {
-    __debug "${FUNCNAME}"
+    __debug "${funcstack}"
     case $cur in
         -*)
-            compopt -o nospace
+            complete -o nospace
             local allflags
             if [ ${#must_have_one_flag[@]} -ne 0 ]; then
                 allflags=("${must_have_one_flag[@]}")
@@ -49,7 +49,7 @@ __handle_reply()
                 allflags=("${flags[*]} ${two_word_flags[*]}")
             fi
             COMPREPLY=( $(compgen -W "${allflags[*]}" -- "$cur") )
-            [[ $COMPREPLY == *= ]] || compopt +o nospace
+            [[ $COMPREPLY == *= ]] || complete +o nospace
             return 0;
             ;;
     esac
@@ -78,7 +78,7 @@ __handle_reply()
     COMPREPLY=( $(compgen -W "${completions[*]}" -- "$cur") )
 
     if [[ ${#COMPREPLY[@]} -eq 0 ]]; then
-        declare -F __custom_func >/dev/null && __custom_func
+        typeset -f __custom_func >/dev/null && __custom_func
     fi
 }
 
@@ -97,7 +97,7 @@ __handle_subdirs_in_dir_flag()
 
 __handle_flag()
 {
-    __debug "${FUNCNAME}: c is $c words[c] is ${words[c]}"
+    __debug "${funcstack}: c is $c words[c] is ${words[c]}"
 
     # if a command required a flag, and we found it, unset must_have_one_flag()
     local flagname=${words[c]}
@@ -106,7 +106,7 @@ __handle_flag()
         flagname=${flagname%=*} # strip everything after the =
         flagname="${flagname}=" # but put the = back
     fi
-    __debug "${FUNCNAME}: looking for ${flagname}"
+    __debug "${funcstack}: looking for ${flagname}"
     if __contains_word "${flagname}" "${must_have_one_flag[@]}"; then
         must_have_one_flag=()
     fi
@@ -127,7 +127,7 @@ __handle_flag()
 
 __handle_noun()
 {
-    __debug "${FUNCNAME}: c is $c words[c] is ${words[c]}"
+    __debug "${funcstack}: c is $c words[c] is ${words[c]}"
 
     if __contains_word "${words[c]}" "${must_have_one_noun[@]}"; then
         must_have_one_noun=()
@@ -139,7 +139,7 @@ __handle_noun()
 
 __handle_command()
 {
-    __debug "${FUNCNAME}: c is $c words[c] is ${words[c]}"
+    __debug "${funcstack}: c is $c words[c] is ${words[c]}"
 
     local next_command
     if [[ -n ${last_command} ]]; then
@@ -148,8 +148,8 @@ __handle_command()
         next_command="_${words[c]}"
     fi
     c=$((c+1))
-    __debug "${FUNCNAME}: looking for ${next_command}"
-    declare -F $next_command >/dev/null && $next_command
+    __debug "${funcstack}: looking for ${next_command}"
+    typeset -f $next_command >/dev/null && $next_command
 }
 
 __handle_word()
@@ -158,7 +158,7 @@ __handle_word()
         __handle_reply
 	return
     fi
-    __debug "${FUNCNAME}: c is $c words[c] is ${words[c]}"
+    __debug "${funcstack}: c is $c words[c] is ${words[c]}"
     if [[ "${words[c]}" == -* ]]; then
 	__handle_flag
     elif __contains_word "${words[c]}" "${commands[@]}"; then
@@ -203,7 +203,7 @@ __kubectl_get_containers()
 {
     local template
     template="{{ range .spec.containers  }}{{ .name }} {{ end }}"
-    __debug "${FUNCNAME} nouns are ${nouns[*]}"
+    __debug "${funcstack} nouns are ${nouns[*]}"
 
     local len="${#nouns[@]}"
     if [[ ${len} -ne 1 ]]; then
@@ -753,6 +753,7 @@ _kubectl_run()
     flags+=("--image=")
     flags+=("--labels=")
     two_word_flags+=("-l")
+    flags+=("--leave-stdin-open")
     flags+=("--limits=")
     flags+=("--no-headers")
     flags+=("--output=")
@@ -850,6 +851,43 @@ _kubectl_expose()
     flags+=("--type=")
 
     must_have_one_flag=()
+    must_have_one_noun=()
+}
+
+_kubectl_autoscale()
+{
+    last_command="kubectl_autoscale"
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--cpu-percent=")
+    flags+=("--dry-run")
+    flags+=("--filename=")
+    flags_with_completion+=("--filename")
+    flags_completion+=("__handle_filename_extension_flag json|stdin|yaml|yml")
+    two_word_flags+=("-f")
+    flags_with_completion+=("-f")
+    flags_completion+=("__handle_filename_extension_flag json|stdin|yaml|yml")
+    flags+=("--generator=")
+    flags+=("--max=")
+    flags+=("--min=")
+    flags+=("--name=")
+    flags+=("--no-headers")
+    flags+=("--output=")
+    two_word_flags+=("-o")
+    flags+=("--output-version=")
+    flags+=("--show-all")
+    flags+=("-a")
+    flags+=("--sort-by=")
+    flags+=("--template=")
+    two_word_flags+=("-t")
+
+    must_have_one_flag=()
+    must_have_one_flag+=("--max=")
     must_have_one_noun=()
 }
 
@@ -1210,6 +1248,7 @@ _kubectl()
     commands+=("run")
     commands+=("stop")
     commands+=("expose")
+    commands+=("autoscale")
     commands+=("label")
     commands+=("annotate")
     commands+=("config")
@@ -1256,25 +1295,18 @@ _kubectl()
 __start_kubectl()
 {
     local cur prev words cword
-    if declare -F _init_completions >/dev/null 2>&1; then
-        _init_completion -s || return
-    else
-        __my_init_completion || return
-    fi
-
-    local flags two_word_flags flags_with_completion flags_completion commands
-    local must_have_one_flag must_have_one_noun nouns
+    _init_completion -s || return
 
     local c=0
-    flags=()
-    two_word_flags=()
-    flags_with_completion=()
-    flags_completion=()
-    commands=("kubectl")
-    must_have_one_flag=()
-    must_have_one_noun=()
+    local flags=()
+    local two_word_flags=()
+    local flags_with_completion=()
+    local flags_completion=()
+    local commands=("kubectl")
+    local must_have_one_flag=()
+    local must_have_one_noun=()
     local last_command
-    nouns=()
+    local nouns=()
 
     __handle_word
 }
