@@ -88,3 +88,39 @@ _init_completion()
     _get_comp_words_by_ref cur prev words cword
 }
 fi
+
+_expand()
+{
+	[ "$cur" != "${cur%\\}" ] && cur="$cur\\"
+
+	# expand ~username type directory specifications
+	if [[ "$cur" == \~*/* ]]; then
+		eval cur=$cur
+
+	elif [[ "$cur" == \~* ]]; then
+		cur=${cur#\~}
+		COMPREPLY=( $( compgen -P '~' -u $cur ) )
+		return ${#COMPREPLY[@]}
+	fi
+}
+
+_filedir()
+{
+	local IFS=$'\t\n' xspec #glob
+
+	_expand || return 0
+
+	#glob=$(set +o|grep noglob) # save glob setting.
+	#set -f		 # disable pathname expansion (globbing)
+
+	if [ "${1:-}" = -d ]; then
+		COMPREPLY=( ${COMPREPLY[@]:-} $( compgen -d -- $cur ) )
+		#eval "$glob"    # restore glob setting.
+		return 0
+	fi
+
+	xspec=${1:+"!*.$1"}	# set only if glob passed in as $1
+	COMPREPLY=( ${COMPREPLY[@]:-} $( compgen -f -X "$xspec" -- "$cur" ) \
+		    $( compgen -d -- "$cur" ) )
+	#eval "$glob"    # restore glob setting.
+} # _filedir()
