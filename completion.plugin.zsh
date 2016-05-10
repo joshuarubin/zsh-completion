@@ -15,8 +15,8 @@ fi
 fpath+=${0:h}/external/src
 fpath+=${0:h}/completion
 
-if [[ -d $HOME/.zsh_completion/functions ]]; then
-  fpath+=$HOME/.zsh_completion/functions
+if [[ -d $ZSH/completion/functions ]]; then
+  fpath+=$ZSH/completion/functions
 fi
 
 # Load and initialize the completion system ignoring insecure directories.
@@ -157,8 +157,8 @@ for file in ${0:h}/internal/*; do
   source $file
 done
 
-if [[ $HOME/.zsh_completion/scripts/*(#qN) ]]; then
-  for file in $HOME/.zsh_completion/scripts/*; do
+if [[ $ZSH/completion/scripts/*(#qN) ]]; then
+  for file in $ZSH/completion/scripts/*; do
     source $file
   done
 fi
