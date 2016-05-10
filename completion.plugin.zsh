@@ -15,6 +15,10 @@ fi
 fpath+=${0:h}/external/src
 fpath+=${0:h}/completion
 
+if [[ -d $HOME/.zsh_completion/functions ]]; then
+  fpath+=$HOME/.zsh_completion/functions
+fi
+
 # Load and initialize the completion system ignoring insecure directories.
 autoload -Uz compinit && compinit -i
 autoload -Uz bashcompinit && bashcompinit
@@ -152,4 +156,11 @@ zstyle ':completion:*:(ssh|scp|rsync):*:hosts-ipaddr' ignored-patterns '^(<->.<-
 for file in ${0:h}/internal/*; do
   source $file
 done
+
+if [[ $HOME/.zsh_completion/scripts/*(#qN) ]]; then
+  for file in $HOME/.zsh_completion/scripts/*; do
+    source $file
+  done
+fi
+
 unset file
