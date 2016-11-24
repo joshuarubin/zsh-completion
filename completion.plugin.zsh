@@ -157,10 +157,4 @@ for file in ${0:h}/internal/*; do
   source $file
 done
 
-if [[ $ZSH/completion/scripts/*(#qN) ]]; then
-  for file in $ZSH/completion/scripts/*; do
-    source $file
-  done
-fi
-
 unset file
